@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BØFA Manager Pro - Premium</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6', // Bright Blue
+                        secondary: '#1e3a8a', // Deep Blue
+                        accent: '#f59e0b', // Amber
+                        dark: '#0f172a', // Slate 900
+                        light: '#f8fafc', // Slate 50
+                        surface: '#ffffff'
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'blob': 'blob 7s infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(30px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        blob: {
+                            '0%': { transform: 'translate(0px, 0px) scale(1)' },
+                            '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+                            '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+                            '100%': { transform: 'translate(0px, 0px) scale(1)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts: Tajawal -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { 
+            font-family: 'Tajawal', sans-serif; 
+            background-color: #f1f5f9; 
+            -webkit-tap-highlight-color: transparent; 
+            overscroll-behavior-y: none; 
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Print Styles */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-report, #printable-report * { visibility: visible; }
+            #printable-report { position: absolute; left: 0; top: 0; width: 100%; direction: rtl; margin:0; padding:0;}
+            .no-print { display: none !important; }
+            @page { margin: 1cm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+        
+        /* UI Elements */
+        .glass-nav { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(226, 232, 240, 0.6); 
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .fab { box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5); }
+        
+        /* Bottom Sheet Animation */
+        .bottom-sheet-enter { transform: translateY(100%); }
+        .bottom-sheet-enter-active { transform: translateY(0); transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .bottom-sheet-exit { transform: translateY(0); }
+        .bottom-sheet-exit-active { transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 1, 1); }
+
+        /* Animated Login Background */
+        .login-bg {
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #0f172a 100%);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-20 md:pb-0 selection:bg-primary selection:text-white">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- Utility Functions ---
+        const generateId = () => Math.random().toString(36).substr(2, 9);
+        const formatDate = (dateString) => new Date(dateString).toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+        const formatMoney = (amount) => Number(amount).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        // --- Custom Hook for LocalStorage ---
+        function useLocalStorage(key, initialValue) {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) { return initialValue; }
+            });
+            const setValue = (value) => {
+                try {
+                    const valueToStore = value instanceof Function ? value(storedValue) : value;
+                    setStoredValue(valueToStore);
+                    window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                } catch (error) { console.log(error); }
+            };
+            return [storedValue, setValue];
+        }
+
+        // --- Main App Component ---
+        function App() {
+            // Data States (Using existing keys to prevent data loss)
+            const [isLogged, setIsLogged] = useLocalStorage('bofa_logged_v2', false);
+            const [pin, setPin] = useLocalStorage('bofa_pin_v2', '0000');
+            const [employees, setEmployees] = useLocalStorage('bofa_employees_v2', []);
+            const [transactions, setTransactions] = useLocalStorage('bofa_transactions_v2', []);
+            const [expenses, setExpenses] = useLocalStorage('bofa_expenses_v2', []);
+            const [archives, setArchives] = useLocalStorage('bofa_archives_v2', []);
+            const [settings, setSettings] = useLocalStorage('bofa_settings_v2', {
+                companyName: 'شركتي', currency: 'د.ل'
+            });
+            const [lastActive, setLastActive] = useLocalStorage('bofa_last_active_v2', Date.now());
+
+            // UI States
+            const [activeTab, setActiveTab] = useState('dashboard');
+            const [selectedEmployee, setSelectedEmployee] = useState(null);
+            const [reportHtml, setReportHtml] = useState(null);
+            
+            // Global Modals
+            const [showGlobalEmpModal, setShowGlobalEmpModal] = useState(false);
+            const [showGlobalExpModal, setShowGlobalExpModal] = useState(false);
+            const [editExpenseData, setEditExpenseData] = useState(null);
+
+            // Session Timeout Logic (1 Hour = 3600000 ms)
+            useEffect(() => {
+                if (isLogged) {
+                    const timeDiff = Date.now() - lastActive;
+                    if (timeDiff > 3600000) {
+                        setIsLogged(false);
+                    }
+                }
+
+                // Update activity on click or touch
+                const updateActivity = () => setLastActive(Date.now());
+                window.addEventListener('click', updateActivity);
+                window.addEventListener('touchstart', updateActivity);
+
+                return () => {
+                    window.removeEventListener('click', updateActivity);
+                    window.removeEventListener('touchstart', updateActivity);
+                };
+            }, [isLogged, lastActive]);
+
+            // Expense Handlers
+            const handleSaveExpense = (expData) => {
+                if (editExpenseData) {
+                    setExpenses(expenses.map(e => e.id === editExpenseData.id ? { ...expData, id: e.id, archiveId: e.archiveId } : e));
+                    setEditExpenseData(null);
+                } else {
+                    setExpenses([...expenses, { ...expData, id: generateId(), archiveId: null }]);
+                }
+                setShowGlobalExpModal(false);
+            };
+
+            const handleEditExpense = (expense) => {
+                setEditExpenseData(expense);
+                setShowGlobalExpModal(true);
+            };
+
+            const handleDeleteExpense = (id) => {
+                if(confirm('هل أنت متأكد من حذف هذا المصروف؟')) {
+                    setExpenses(expenses.filter(e => e.id !== id));
+                }
+            };
+
+            // Authentication Screen
+            if (!isLogged) return <LoginScreen correctPin={pin} companyName={settings.companyName} onLogin={() => { setIsLogged(true); setLastActive(Date.now()); }} />;
+
+            // PDF Print View
+            if (reportHtml) {
+                return (
+                    <div className="bg-slate-200 min-h-screen p-2 md:p-8 font-sans">
+                        <div className="max-w-5xl mx-auto flex justify-between items-center mb-6 no-print glass-panel p-4 rounded-2xl shadow-sm sticky top-4 z-50">
+                            <button onClick={() => setReportHtml(null)} className="px-5 py-2.5 bg-white text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition border border-slate-200 shadow-sm"><i className="fas fa-arrow-right ml-2"></i> رجوع</button>
+                            <button onClick={() => window.print()} className="px-6 py-2.5 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition flex items-center gap-2"><i className="fas fa-print"></i> طباعة التقرير</button>
+                        </div>
+                        <div id="printable-report" className="max-w-5xl mx-auto bg-white shadow-2xl min-h-[1056px] relative overflow-hidden" dangerouslySetInnerHTML={{ __html: reportHtml }}></div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col md:flex-row min-h-screen bg-slate-50">
+                    {/* Desktop Sidebar */}
+                    <div className="hidden md:flex flex-col w-72 bg-dark text-white fixed h-full z-20 shadow-2xl overflow-y-auto no-scrollbar">
+                        <div className="p-6">
+                            <div className="flex flex-col items-center justify-center gap-3 mb-8 bg-white/5 p-4 rounded-2xl border border-white/10">
+                                <div className="w-16 h-16 bg-gradient-to-tr from-primary to-blue-400 rounded-2xl flex items-center justify-center text-3xl shadow-lg transform rotate-3">
+                                    <i className="fas fa-layer-group text-white"></i>
+                                </div>
+                                <div className="text-center">
+                                    <h1 className="text-xl font-black text-white tracking-wide">BØFA <span className="font-light text-blue-300">Pro</span></h1>
+                                    <p className="text-xs text-slate-400 mt-1">{settings.companyName}</p>
+                                </div>
+                            </div>
+                            <nav className="flex flex-col gap-2">
+                                <NavItem icon="fa-chart-pie" label="الرئيسية" active={activeTab === 'dashboard'} onClick={() => {setActiveTab('dashboard'); setSelectedEmployee(null);}} />
+                                <NavItem icon="fa-users" label="إدارة الموظفين" active={activeTab === 'employees'} onClick={() => {setActiveTab('employees'); setSelectedEmployee(null);}} />
+                                <NavItem icon="fa-money-bill-transfer" label="المصروفات" active={activeTab === 'expenses'} onClick={() => {setActiveTab('expenses'); setSelectedEmployee(null);}} />
+                                <NavItem icon="fa-file-invoice" label="التقارير والإحصائيات" active={activeTab === 'reports'} onClick={() => {setActiveTab('reports'); setSelectedEmployee(null);}} />
+                                <div className="h-px bg-white/10 my-2 mx-4"></div>
+                                <NavItem icon="fa-box-archive" label="الأرشيف" active={activeTab === 'archive'} onClick={() => {setActiveTab('archive'); setSelectedEmployee(null);}} />
+                                <NavItem icon="fa-sliders" label="الإعدادات" active={activeTab === 'settings'} onClick={() => {setActiveTab('settings'); setSelectedEmployee(null);}} />
+                            </nav>
+                        </div>
+                        <div className="mt-auto p-6">
+                            <div className="flex items-center justify-between bg-slate-800/50 border border-slate-700 p-3 rounded-2xl">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-primary"><i className="fas fa-shield-halved"></i></div>
+                                    <div>
+                                        <div className="text-sm font-bold">المدير العام</div>
+                                        <div className="text-[10px] text-emerald-400">متصل الآن</div>
+                                    </div>
+                                </div>
+                                <button onClick={() => {setIsLogged(false); setLastActive(0);}} className="w-8 h-8 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition flex items-center justify-center">
+                                    <i className="fas fa-power-off text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 md:mr-72 relative min-w-0">
+                        {/* Mobile Header */}
+                        <header className="md:hidden bg-white/80 backdrop-blur-md shadow-sm p-3 sticky top-0 z-30 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-primary text-white rounded-lg flex items-center justify-center text-sm"><i className="fas fa-layer-group"></i></div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-base font-black text-slate-800 leading-tight">BØFA <span className="font-light text-primary">Pro</span></h1>
+                                    <span className="text-[10px] font-bold text-slate-500 truncate max-w-[100px]">{settings.companyName}</span>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => {setActiveTab('archive'); setSelectedEmployee(null);}} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${activeTab === 'archive' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                    <i className="fas fa-box-archive"></i>
+                                </button>
+                                <button onClick={() => {setActiveTab('settings'); setSelectedEmployee(null);}} className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${activeTab === 'settings' ? 'bg-primary/10 text-primary' : 'text-slate-500 hover:bg-slate-100'}`}>
+                                    <i className="fas fa-cog"></i>
+                                </button>
+                            </div>
+                        </header>
+
+                        {/* Top Bar for Desktop */}
+                        <div className="hidden md:flex justify-between items-center p-6 bg-transparent sticky top-0 z-10 backdrop-blur-sm">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                                    {activeTab === 'dashboard' && 'نظرة عامة'}
+                                    {activeTab === 'employees' && !selectedEmployee && 'إدارة الموظفين'}
+                                    {activeTab === 'employees' && selectedEmployee && (
+                                        <span className="flex items-center cursor-pointer text-slate-500 hover:text-primary transition" onClick={() => setSelectedEmployee(null)}>
+                                            <i className="fas fa-arrow-right ml-2"></i> ملف الموظف: <span className="text-slate-800 mr-2">{selectedEmployee.name}</span>
+                                        </span>
+                                    )}
+                                    {activeTab === 'expenses' && 'سجل المصروفات'}
+                                    {activeTab === 'reports' && 'إنشاء التقارير'}
+                                    {activeTab === 'archive' && 'الأرشيف'}
+                                    {activeTab === 'settings' && 'إعدادات المنظومة'}
+                                </h2>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    {activeTab === 'dashboard' && 'ملخص مالي وإحصائيات للفترة الحالية.'}
+                                    {activeTab === 'employees' && !selectedEmployee && 'إدارة السلف، الخصومات، والرواتب لموظفيك.'}
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button onClick={() => setShowGlobalEmpModal(true)} className="px-4 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold shadow-sm hover:bg-slate-50 transition text-sm flex items-center gap-2">
+                                    <i className="fas fa-user-plus text-primary"></i> موظف جديد
+                                </button>
+                                <button onClick={() => {setEditExpenseData(null); setShowGlobalExpModal(true);}} className="px-4 py-2 bg-primary text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition text-sm flex items-center gap-2">
+                                    <i className="fas fa-plus"></i> إضافة مصروف
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Views Container */}
+                        <main className="p-4 md:p-6 pb-24 md:pb-8 animate-fade-in" style={{minHeight: 'calc(100vh - 80px)'}}>
+                            {activeTab === 'dashboard' && <DashboardView 
+                                employees={employees} transactions={transactions} expenses={expenses} settings={settings} 
+                                onAddEmp={() => setShowGlobalEmpModal(true)} onAddExp={() => {setEditExpenseData(null); setShowGlobalExpModal(true);}}
+                                onResetPeriod={(archiveData) => {
+                                    const timestamp = new Date().getTime().toString();
+                                    const newArchive = { id: timestamp, name: archiveData.name, date: new Date().toISOString() };
+                                    
+                                    const newTrans = transactions.map(t => !t.archiveId ? {...t, archiveId: timestamp} : t);
+                                    const newExp = expenses.map(e => !e.archiveId ? {...e, archiveId: timestamp} : e);
+                                    
+                                    setTransactions(newTrans); setExpenses(newExp); setArchives([newArchive, ...archives]);
+                                    alert('تم إقفال وتصفير الفترة بنجاح! تم نقل البيانات إلى الأرشيف.');
+                                }}
+                            />}
+                            
+                            {activeTab === 'employees' && !selectedEmployee && (
+                                <EmployeesView 
+                                    employees={employees} 
+                                    onSelectEmployee={setSelectedEmployee} 
+                                    transactions={transactions} 
+                                    settings={settings} 
+                                    onAddEmployee={() => setShowGlobalEmpModal(true)} 
+                                />
+                            )}
+                            
+                            {activeTab === 'employees' && selectedEmployee && (
+                                <EmployeeDetailView 
+                                    employee={selectedEmployee} 
+                                    updateEmployee={(updated) => { setEmployees(employees.map(e => e.id === updated.id ? updated : e)); setSelectedEmployee(updated); }} 
+                                    deleteEmployee={(empId) => {
+                                        if(confirm('تحذير: سيتم حذف الموظف وكافة عملياته المالية نهائياً. هل أنت متأكد؟')) {
+                                            setEmployees(employees.filter(e => e.id !== empId));
+                                            setTransactions(transactions.filter(t => t.employeeId !== empId));
+                                            setSelectedEmployee(null);
+                                        }
+                                    }}
+                                    transactions={transactions} 
+                                    setTransactions={setTransactions} 
+                                    settings={settings} 
+                                    archives={archives}
+                                    setReportHtml={setReportHtml}
+                                />
+                            )}
+                            
+                            {activeTab === 'expenses' && <ExpensesView 
+                                expenses={expenses} 
+                                onDeleteExpense={handleDeleteExpense} 
+                                onEditExpense={handleEditExpense}
+                                settings={settings} archives={archives} 
+                            />}
+                            
+                            {activeTab === 'reports' && <ReportsView employees={employees} transactions={transactions} expenses={expenses} settings={settings} setReportHtml={setReportHtml} archives={archives} />}
+                            
+                            {activeTab === 'archive' && <ArchiveView archives={archives} />}
+
+                            {activeTab === 'settings' && <SettingsView settings={settings} setSettings={setSettings} setPin={setPin} employees={employees} transactions={transactions} expenses={expenses} archives={archives} />}
+                        </main>
+                    </div>
+
+                    {/* Mobile Bottom Navigation */}
+                    <div className="md:hidden glass-nav fixed bottom-0 left-0 right-0 h-[72px] flex justify-around items-center z-40 pb-safe rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
+                        <MobileNavItem icon="fa-house" label="الرئيسية" active={activeTab === 'dashboard'} onClick={() => {setActiveTab('dashboard'); setSelectedEmployee(null);}} />
+                        <MobileNavItem icon="fa-users" label="الموظفين" active={activeTab === 'employees'} onClick={() => {setActiveTab('employees'); setSelectedEmployee(null);}} />
+                        <MobileNavItem icon="fa-plus" label="إجراء" main={true} onClick={() => {setEditExpenseData(null); setShowGlobalExpModal(true);}} />
+                        <MobileNavItem icon="fa-money-bill" label="المصروفات" active={activeTab === 'expenses'} onClick={() => {setActiveTab('expenses'); setSelectedEmployee(null);}} />
+                        <MobileNavItem icon="fa-file-invoice" label="التقارير" active={activeTab === 'reports'} onClick={() => {setActiveTab('reports'); setSelectedEmployee(null);}} />
+                    </div>
+
+                    {/* Global Modals */}
+                    {showGlobalEmpModal && <EmployeeFormModal onClose={() => setShowGlobalEmpModal(false)} onSave={(newEmp) => { setEmployees([...employees, { ...newEmp, id: generateId() }]); setShowGlobalEmpModal(false); setActiveTab('employees'); setSelectedEmployee(null); }} />}
+                    {showGlobalExpModal && <ExpenseModal editItem={editExpenseData} onClose={() => {setShowGlobalExpModal(false); setEditExpenseData(null);}} onSave={handleSaveExpense} />}
+                </div>
+            );
+        }
+
+        // --- Splash & Login Screen (Enhanced) ---
+        function LoginScreen({ correctPin, companyName, onLogin }) {
+            const [input, setInput] = useState('');
+            const [isSplash, setIsSplash] = useState(true);
+            const [error, setError] = useState(false);
+
+            useEffect(() => {
+                const timer = setTimeout(() => setIsSplash(false), 2800);
+                return () => clearTimeout(timer);
+            }, []);
+
+            if (isSplash) {
+                return (
+                    <div className="min-h-screen login-bg flex flex-col items-center justify-center relative overflow-hidden">
+                        {/* Animated background elements */}
+                        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-blue-500/30 rounded-full mix-blend-screen filter blur-3xl opacity-70 animate-blob"></div>
+                        <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-purple-500/30 rounded-full mix-blend-screen filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+                        <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-emerald-500/30 rounded-full mix-blend-screen filter blur-3xl opacity-70 animate-blob animation-delay-4000"></div>
+                        
+                        <div className="relative z-10 flex flex-col items-center animate-slide-up">
+                            <div className="w-28 h-28 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] flex items-center justify-center text-5xl shadow-2xl shadow-blue-500/20 mb-6 animate-float">
+                                <i className="fas fa-layer-group text-white"></i>
+                            </div>
+                            <h1 className="text-5xl font-black text-white tracking-widest mb-2 shadow-black/50 drop-shadow-lg">BØFA</h1>
+                            <p className="text-blue-300 font-bold tracking-[0.3em] mb-10">MANAGER PRO</p>
+                            
+                            <div className="bg-white/10 backdrop-blur-md px-6 py-3 rounded-full border border-white/10 flex items-center gap-3">
+                                <div className="w-2.5 h-2.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                                <span className="text-slate-200 text-sm font-medium">جاري تهيئة مساحة العمل لـ <span className="text-white font-bold">{companyName}</span>...</span>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="min-h-screen login-bg flex items-center justify-center p-4 relative overflow-hidden animate-fade-in">
+                    <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full mix-blend-screen filter blur-3xl opacity-70 animate-blob"></div>
+                    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-screen filter blur-3xl opacity-70 animate-blob animation-delay-2000"></div>
+                    
+                    <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2.5rem] p-10 w-full max-w-sm shadow-2xl relative z-10 text-center transform transition-all">
+                        <div className="w-20 h-20 bg-gradient-to-br from-primary to-blue-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-blue-500/40">
+                            <i className="fas fa-lock text-3xl"></i>
+                        </div>
+                        <h2 className="text-2xl font-black mb-1 text-white">{companyName}</h2>
+                        <p className="text-blue-200 mb-8 text-sm font-medium">أدخل رمز الوصول (PIN) للمتابعة</p>
+                        
+                        <div className="relative">
+                            <input 
+                                type="password" 
+                                placeholder="••••" 
+                                maxLength="4" 
+                                className={`w-full bg-white/5 border-2 ${error ? 'border-red-400 bg-red-500/10 text-red-300' : 'border-white/20 text-white focus:border-blue-400 focus:bg-white/10'} text-center text-4xl tracking-[0.5em] p-4 rounded-2xl mb-4 focus:outline-none transition-all duration-300 font-black shadow-inner backdrop-blur-sm`} 
+                                value={input} 
+                                onChange={(e) => {
+                                    const val = e.target.value.replace(/\D/g, '');
+                                    setInput(val);
+                                    setError(false);
+                                    if(val.length === 4) { 
+                                        if(val === correctPin) {
+                                            setTimeout(onLogin, 300);
+                                        } else {
+                                            setError(true);
+                                            setTimeout(() => setInput(''), 500);
+                                        }
+                                    }
+                                }} 
+                                inputMode="numeric"
+                                pattern="\d*" 
+                                autoFocus 
+                            />
+                            {error && <p className="absolute -bottom-6 left-0 right-0 text-red-400 text-sm font-bold animate-pulse">الرمز السري غير صحيح</p>}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- View: Dashboard ---
+        function DashboardView({ employees, transactions, expenses, settings, onAddEmp, onAddExp, onResetPeriod }) {
+            const [showBreakdown, setShowBreakdown] = useState(null);
+            
+            const activeTrans = transactions.filter(t => !t.archiveId);
+            const activeExp = expenses.filter(e => !e.archiveId);
+
+            const totalEmployees = employees.length;
+            const currentExpenses = activeExp.reduce((sum, e) => sum + Number(e.amount), 0);
+
+            let totalAdvances = 0, totalNet = 0;
+            
+            const empDetails = employees.map(emp => {
+                const empT = activeTrans.filter(t => t.employeeId === emp.id);
+                let add = 0, sub = 0;
+                empT.forEach(t => {
+                    if(t.type === 'bonus' || t.type === 'salary') add += Number(t.amount);
+                    if(t.type === 'deduction' || t.type === 'advance') {
+                        sub += Number(t.amount);
+                        if(t.type === 'advance') totalAdvances += Number(t.amount);
+                    }
+                });
+                const net = Number(emp.basicSalary) + add - sub;
+                totalNet += net;
+                return { ...emp, net, add, sub };
+            });
+
+            return (
+                <div className="space-y-6">
+                    {/* Header Banner */}
+                    <div className="bg-gradient-to-br from-secondary to-primary rounded-[2rem] p-8 text-white shadow-xl relative overflow-hidden border border-blue-400/30">
+                        <div className="absolute -right-10 -top-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
+                        <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-accent opacity-20 rounded-full blur-2xl"></div>
+                        
+                        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                            <div>
+                                <h2 className="text-blue-100 font-medium mb-2 flex items-center gap-2"><i className="fas fa-calendar-check text-blue-300"></i> ملخص الفترة الحالية</h2>
+                                <div className="text-4xl md:text-5xl font-black mb-2 tracking-tight">{formatMoney(totalNet + currentExpenses)} <span className="text-xl font-normal text-blue-200">{settings.currency}</span></div>
+                                <p className="text-sm text-blue-200 font-medium">إجمالي المستحقات (صافي الرواتب + المصروفات)</p>
+                            </div>
+                            <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/20 w-full md:w-auto">
+                                <div className="text-xs text-blue-200 mb-1">الرواتب المتبقية</div>
+                                <div className="text-2xl font-bold">{formatMoney(totalNet)} <span className="text-xs">{settings.currency}</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div onClick={() => setShowBreakdown('employees')} className="cursor-pointer group">
+                            <StatCard title="إجمالي الموظفين" value={totalEmployees} sub="موظف" icon="fa-users" color="text-blue-600 bg-blue-100" />
+                        </div>
+                        <div onClick={() => setShowBreakdown('expenses')} className="cursor-pointer group">
+                            <StatCard title="مصروفات الفترة" value={formatMoney(currentExpenses)} sub={settings.currency} icon="fa-money-bill-transfer" color="text-rose-600 bg-rose-100" />
+                        </div>
+                        <StatCard title="صافي الرواتب" value={formatMoney(totalNet)} sub={settings.currency} icon="fa-wallet" color="text-emerald-600 bg-emerald-100" />
+                        <StatCard title="إجمالي السلفيات" value={formatMoney(totalAdvances)} sub={settings.currency} icon="fa-hand-holding-dollar" color="text-amber-600 bg-amber-100" />
+                    </div>
+
+                    {/* Actions Panel */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition">
+                            <h3 className="font-bold text-slate-800 mb-5 flex items-center"><i className="fas fa-bolt text-accent ml-2"></i> وصول سريع</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <button onClick={onAddEmp} className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-2xl hover:bg-primary hover:text-white transition group border border-slate-100">
+                                    <div className="w-12 h-12 bg-white text-primary group-hover:text-primary rounded-xl flex items-center justify-center text-xl mb-3 shadow-sm group-hover:scale-110 transition"><i className="fas fa-user-plus"></i></div>
+                                    <span className="text-sm font-bold">تسجيل موظف</span>
+                                </button>
+                                <button onClick={onAddExp} className="flex flex-col items-center justify-center p-5 bg-slate-50 rounded-2xl hover:bg-rose-500 hover:text-white transition group border border-slate-100">
+                                    <div className="w-12 h-12 bg-white text-rose-500 group-hover:text-rose-500 rounded-xl flex items-center justify-center text-xl mb-3 shadow-sm group-hover:scale-110 transition"><i className="fas fa-receipt"></i></div>
+                                    <span className="text-sm font-bold">إضافة مصروف</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-32 h-32 bg-slate-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-150"></div>
+                            <div className="relative z-10">
+                                <h3 className="font-bold text-slate-800 mb-2 flex items-center"><i className="fas fa-box-archive text-slate-400 ml-2"></i> إقفال الفترة المالية</h3>
+                                <p className="text-sm text-slate-500 mb-6 leading-relaxed">قم بتصفير كافة حسابات الموظفين والمصروفات لبدء شهر جديد. سيتم حفظ نسخة كاملة في الأرشيف.</p>
+                            </div>
+                            <button onClick={() => {
+                                const name = prompt('أدخل اسماً لهذه الفترة لحفظها في الأرشيف (مثال: شهر أبريل 2026):', 'الفترة الحالية');
+                                if(name) onResetPeriod({ name });
+                            }} className="relative z-10 w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition flex items-center justify-center gap-2 shadow-lg hover:shadow-xl">
+                                <i className="fas fa-lock"></i> إغلاق وتصفير الفترة
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Breakdown Modals */}
+                    {showBreakdown === 'employees' && (
+                        <BottomSheet title="تفصيل استحقاقات الموظفين" onClose={() => setShowBreakdown(null)}>
+                            <div className="space-y-3 mt-4">
+                                {empDetails.map(e => (
+                                    <div key={e.id} className="flex justify-between items-center p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-blue-200 transition">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-primary">{e.name.charAt(0)}</div>
+                                            <div>
+                                                <p className="font-bold text-slate-800 text-sm">{e.name}</p>
+                                                <p className="text-xs text-slate-500">أساسي: {formatMoney(e.basicSalary)}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-left">
+                                            <p className="font-black text-emerald-600">{formatMoney(e.net)}</p>
+                                            <p className="text-[10px] text-slate-400">إضافة: <span className="text-blue-500">{e.add}</span> | خصم: <span className="text-red-500">{e.sub}</span></p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </BottomSheet>
+                    )}
+
+                    {showBreakdown === 'expenses' && (
+                        <BottomSheet title="تفصيل مصروفات الفترة" onClose={() => setShowBreakdown(null)}>
+                            <div className="space-y-3 mt-4">
+                                {activeExp.length === 0 ? <p className="text-center text-slate-400 py-8">لا توجد مصروفات مسجلة.</p> : 
+                                    activeExp.map(e => (
+                                    <div key={e.id} className="flex justify-between items-center p-3.5 bg-white border border-slate-100 rounded-2xl shadow-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center"><i className="fas fa-tag"></i></div>
+                                            <div>
+                                                <p className="font-bold text-slate-800 text-sm">{e.name}</p>
+                                                <p className="text-xs text-slate-500">{formatDate(e.date)}</p>
+                                            </div>
+                                        </div>
+                                        <p className="font-black text-rose-600">{formatMoney(e.amount)}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </BottomSheet>
+                    )}
+                </div>
+            );
+        }
+
+        // --- View: Employees List ---
+        function EmployeesView({ employees, onSelectEmployee, transactions, settings, onAddEmployee }) {
+            const [searchTerm, setSearchTerm] = useState('');
+            const filteredEmployees = employees.filter(e => e.name.includes(searchTerm) || (e.job && e.job.includes(searchTerm)));
+
+            const calcNet = (empId, basic) => {
+                const activeTrans = transactions.filter(t => t.employeeId === empId && !t.archiveId);
+                let net = Number(basic);
+                activeTrans.forEach(t => {
+                    if (['bonus', 'salary'].includes(t.type)) net += Number(t.amount);
+                    if (['deduction', 'advance'].includes(t.type)) net -= Number(t.amount);
+                });
+                return net;
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <i className="fas fa-search absolute top-4 right-5 text-slate-400"></i>
+                            <input type="text" placeholder="ابحث عن اسم موظف، وظيفة..." className="w-full bg-white border border-slate-200 rounded-2xl py-3.5 pr-12 pl-4 focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm transition font-medium" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        </div>
+                        <button onClick={onAddEmployee} className="md:w-auto w-full px-6 py-3.5 bg-primary text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition flex justify-center items-center gap-2">
+                            <i className="fas fa-user-plus"></i> إضافة موظف
+                        </button>
+                    </div>
+
+                    {filteredEmployees.length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-[2rem] border border-slate-100">
+                            <i className="fas fa-users-slash text-6xl text-slate-200 mb-4"></i>
+                            <p className="text-slate-500 font-medium">لا يوجد موظفين لعرضهم.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 pb-24">
+                            {filteredEmployees.map(emp => (
+                                <div key={emp.id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 flex items-center gap-4 cursor-pointer hover:shadow-md hover:border-blue-200 transition group" onClick={() => onSelectEmployee(emp)}>
+                                    <div className="w-16 h-16 bg-slate-50 text-slate-600 rounded-2xl flex items-center justify-center text-2xl font-black border border-slate-100 group-hover:bg-primary group-hover:text-white transition-colors shrink-0">
+                                        {emp.name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-bold text-slate-800 text-lg mb-0.5 truncate">{emp.name}</h3>
+                                        <p className="text-xs text-slate-500 mb-2 truncate">{emp.job || 'غير محدد'}</p>
+                                        <div className="text-sm font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 inline-flex items-center px-2.5 py-1 rounded-lg">
+                                            {formatMoney(calcNet(emp.id, emp.basicSalary))} <span className="text-[10px] mr-1">{settings.currency}</span>
+                                        </div>
+                                    </div>
+                                    <i className="fas fa-chevron-left text-slate-300 group-hover:text-primary transition transform group-hover:-translate-x-1 shrink-0"></i>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // --- View: Employee Detail (Ledger & Profile) ---
+        function EmployeeDetailView({ employee, updateEmployee, deleteEmployee, transactions, setTransactions, settings, archives, setReportHtml }) {
+            const [showTransModal, setShowTransModal] = useState(false);
+            const [showEditModal, setShowEditModal] = useState(false);
+            const [viewMode, setViewMode] = useState('active');
+            const [editTransItem, setEditTransItem] = useState(null);
+
+            const empTransactions = transactions.filter(t => t.employeeId === employee.id);
+            const displayedTrans = viewMode === 'active' ? empTransactions.filter(t => !t.archiveId) : empTransactions.filter(t => t.archiveId === viewMode);
+
+            displayedTrans.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            let additions = 0, deductions = 0;
+            displayedTrans.forEach(t => {
+                if (['bonus', 'salary'].includes(t.type)) additions += Number(t.amount);
+                if (['deduction', 'advance'].includes(t.type)) deductions += Number(t.amount);
+            });
+
+            // Calculate hourly rate based on dynamic working hours (default 240)
+            const workHours = Number(employee.workingHours) || 240;
+            const hourlyRate = (employee.basicSalary / workHours).toFixed(2);
+            const netSalary = Number(employee.basicSalary) + additions - deductions;
+
+            // Generate Individual Employee Report
+            const handlePrintReport = () => {
+                const currentDate = new Date().toLocaleString('ar-LY');
+                let periodName = viewMode === 'active' ? 'الفترة الحالية' : archives.find(a => a.id === viewMode)?.name || '';
+                
+                let rows = displayedTrans.map(t => {
+                    const isPos = ['bonus', 'salary'].includes(t.type);
+                    return `<tr>
+                        <td>${formatDate(t.date)}</td>
+                        <td><strong>${getTransTypeName(t.type)}</strong> - ${t.reason}</td>
+                        <td style="color: ${isPos ? '#2563eb' : '#dc2626'}; direction: ltr; text-align: right;">${isPos ? '+' : '-'}${formatMoney(t.amount)}</td>
+                    </tr>`;
+                }).join('');
+
+                const htmlContent = `
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+                        body { font-family: 'Tajawal', sans-serif; direction: rtl; color: #1e293b; background: #fff; }
+                        .report-wrapper { max-width: 100%; margin: 0 auto; padding: 20px; }
+                        .header { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 30px; border-radius: 20px; margin-bottom: 30px; border: 1px solid #e2e8f0; }
+                        .logo-area h1 { font-size: 28px; font-weight: 900; color: #0f172a; margin:0; }
+                        .title-area { text-align: left; }
+                        .title-area h2 { font-size: 24px; font-weight: bold; color: #2563eb; margin:0; }
+                        .emp-card { background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; margin-bottom: 30px; display: flex; justify-content: space-between;}
+                        .emp-info h3 { margin: 0 0 10px 0; font-size: 22px; color: #0f172a;}
+                        .emp-info p { margin: 5px 0; color: #475569; font-size: 14px;}
+                        table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 40px; font-size: 14px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+                        th, td { padding: 16px; text-align: right; border-bottom: 1px solid #f1f5f9; }
+                        th { background-color: #f8fafc; color: #475569; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+                        .totals { display: flex; justify-content: flex-end; gap: 20px; }
+                        .total-box { background: #f8fafc; padding: 20px 30px; border-radius: 16px; border: 1px solid #e2e8f0; text-align: center; }
+                        .total-box.primary { background: #10b981; color: white; border: none; }
+                        .total-box.primary .t-label { color: #d1fae5; }
+                        .t-label { font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: bold;}
+                        .t-val { font-size: 24px; font-weight: 900; }
+                    </style>
+                    <div class="report-wrapper">
+                        <div class="header">
+                            <div class="logo-area">
+                                <h1>${settings.companyName}</h1>
+                                <p style="color: #64748b; margin-top:5px;">إدارة الموارد البشرية والمالية</p>
+                            </div>
+                            <div class="title-area">
+                                <h2>كشف حساب موظف</h2>
+                                <p style="color: #94a3b8; font-size: 12px; margin-top:5px;">تاريخ الإصدار: ${currentDate}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="emp-card">
+                            <div class="emp-info">
+                                <h3>${employee.name}</h3>
+                                <p><strong>المسمى الوظيفي:</strong> ${employee.job || 'غير محدد'}</p>
+                                <p><strong>الفترة:</strong> ${periodName}</p>
+                            </div>
+                            <div style="text-align: left;">
+                                <p><strong>الراتب الأساسي:</strong> ${formatMoney(employee.basicSalary)} ${settings.currency}</p>
+                                <p><strong>ساعات العمل:</strong> ${workHours} ساعة / شهر</p>
+                            </div>
+                        </div>
+
+                        <table>
+                            <thead><tr><th>التاريخ</th><th>البيان والنوع</th><th>القيمة</th></tr></thead>
+                            <tbody>
+                                <tr>
+                                    <td>-</td>
+                                    <td><strong>راتب أساسي</strong> - استحقاق ثابت</td>
+                                    <td style="color: #10b981; direction: ltr; text-align: right;">+${formatMoney(employee.basicSalary)}</td>
+                                </tr>
+                                ${rows || '<tr><td colspan="3" style="text-align:center">لا توجد عمليات إضافية مسجلة</td></tr>'}
+                            </tbody>
+                        </table>
+                        
+                        <div class="totals">
+                            <div class="total-box">
+                                <div class="t-label">إجمالي الخصومات</div>
+                                <div class="t-val" style="color: #dc2626;">${formatMoney(deductions)}</div>
+                            </div>
+                            <div class="total-box">
+                                <div class="t-label">إجمالي الإضافات</div>
+                                <div class="t-val" style="color: #2563eb;">${formatMoney(additions)}</div>
+                            </div>
+                            <div class="total-box primary">
+                                <div class="t-label">الصافي المستحق الدفع</div>
+                                <div class="t-val">${formatMoney(netSalary)} <span style="font-size:14px; font-weight:normal">${settings.currency}</span></div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; font-size: 12px; color: #64748b;">
+                            تم استخراج هذا الكشف آلياً بواسطة نظام BØFA Manager Pro. التوقيع: ..........................
+                        </div>
+                    </div>
+                `;
+                setReportHtml(htmlContent);
+            };
+
+            return (
+                <div className="space-y-6 pb-24 animate-fade-in">
+                    {/* Header Profile Card */}
+                    <div className="bg-white rounded-3xl p-5 md:p-6 shadow-sm border border-slate-100 relative flex flex-col md:flex-row gap-5 items-center md:items-start justify-between">
+                        <div className="flex flex-col md:flex-row items-center gap-5 text-center md:text-right w-full">
+                            <div className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-tr from-slate-100 to-slate-200 text-slate-600 rounded-[2rem] flex items-center justify-center text-3xl md:text-4xl font-black border border-slate-200 shadow-inner shrink-0">
+                                {employee.name.charAt(0)}
+                            </div>
+                            <div className="flex-1 w-full">
+                                <h2 className="text-2xl md:text-3xl font-black text-slate-800 mb-1">{employee.name}</h2>
+                                <p className="text-slate-500 font-medium mb-3"><i className="fas fa-briefcase ml-1"></i> {employee.job || 'بدون مسمى وظيفي'}</p>
+                                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2">
+                                    <span className="bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs md:text-sm font-bold text-center">أساسي: {formatMoney(employee.basicSalary)}</span>
+                                    <span className="bg-slate-50 border border-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs md:text-sm font-bold text-center">ساعة: {formatMoney(hourlyRate)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Action Buttons for Employee */}
+                        <div className="flex w-full md:w-auto gap-2 shrink-0 md:self-start mt-2 md:mt-0">
+                            <button onClick={handlePrintReport} className="flex-1 md:w-10 md:h-10 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-xl transition flex items-center justify-center shadow-sm py-2 md:py-0" title="طباعة كشف حساب">
+                                <i className="fas fa-print"></i>
+                            </button>
+                            <button onClick={() => setShowEditModal(true)} className="flex-1 md:w-10 md:h-10 bg-slate-100 text-slate-600 hover:bg-primary hover:text-white rounded-xl transition flex items-center justify-center shadow-sm py-2 md:py-0" title="تعديل البيانات">
+                                <i className="fas fa-pen"></i>
+                            </button>
+                            <button onClick={() => deleteEmployee(employee.id)} className="flex-1 md:w-10 md:h-10 bg-red-50 text-red-500 hover:bg-rose-500 hover:text-white rounded-xl transition flex items-center justify-center shadow-sm py-2 md:py-0" title="حذف الموظف">
+                                <i className="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Financial Summary Card */}
+                    <div className="bg-gradient-to-l from-dark to-slate-800 rounded-3xl p-6 shadow-xl text-white flex justify-between items-center relative overflow-hidden">
+                        <div className="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+                        <div className="relative z-10">
+                            <p className="text-slate-400 text-sm font-medium mb-1">الصافي المستحق ({viewMode === 'active' ? 'للفترة الحالية' : 'المؤرشف'})</p>
+                            <h3 className="text-3xl md:text-4xl font-black text-emerald-400">{formatMoney(netSalary)} <span className="text-lg font-normal text-slate-400">{settings.currency}</span></h3>
+                        </div>
+                        <i className="fas fa-sack-dollar text-5xl opacity-20 transform -rotate-12 relative z-10"></i>
+                    </div>
+
+                    {/* Timeline Controls */}
+                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                        <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2 w-full sm:w-auto"><i className="fas fa-list-check text-primary"></i> العمليات وكشف الحساب</h3>
+                        <select className="w-full sm:w-auto bg-slate-50 border border-slate-200 text-sm rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary/20 font-bold text-slate-700 min-w-[200px]" value={viewMode} onChange={(e) => setViewMode(e.target.value)}>
+                            <option value="active">الفترة الحالية (نشط)</option>
+                            {archives.map(a => <option key={a.id} value={a.id}>أرشيف: {a.name}</option>)}
+                        </select>
+                    </div>
+
+                    {/* Timeline List */}
+                    <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden relative">
+                        <div className="absolute top-0 right-8 bottom-0 w-0.5 bg-slate-100"></div>
+                        <div className="p-4 space-y-0">
+                            {/* Static Row: Basic Salary */}
+                            <div className="relative pl-2 sm:pl-4 pr-12 py-5 border-b border-slate-50">
+                                <div className="absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 bg-emerald-500 rounded-full border-4 border-white shadow-sm z-10"></div>
+                                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                                    <div><p className="font-bold text-slate-800 text-base sm:text-lg">الراتب الأساسي</p><p className="text-xs text-slate-400 font-medium mt-1">استحقاق ثابت</p></div>
+                                    <div className="text-emerald-600 font-black bg-emerald-50 px-4 py-1.5 rounded-xl border border-emerald-100 shadow-sm self-start sm:self-auto">+ {formatMoney(employee.basicSalary)}</div>
+                                </div>
+                            </div>
+
+                            {displayedTrans.length === 0 ? <div className="text-center py-12 text-slate-400 font-medium relative z-10 bg-white">لا توجد عمليات إضافية مسجلة.</div> : 
+                                displayedTrans.map(trans => {
+                                    const isPos = ['bonus', 'salary'].includes(trans.type);
+                                    return (
+                                        <div key={trans.id} className="relative pl-2 sm:pl-4 pr-12 py-5 border-b border-slate-50 hover:bg-slate-50 transition group">
+                                            <div className={`absolute right-6 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-4 border-white shadow-sm z-10 ${isPos ? 'bg-primary' : 'bg-rose-500'}`}></div>
+                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                                                <div>
+                                                    <p className="font-bold text-slate-800 flex items-center gap-2">
+                                                        {getTransTypeName(trans.type)}
+                                                        {viewMode !== 'active' && <span className="bg-slate-200 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold">مؤرشف</span>}
+                                                    </p>
+                                                    <p className="text-sm text-slate-500 mt-1">{trans.reason}</p>
+                                                    <p className="text-[10px] text-slate-400 mt-1">{formatDate(trans.date)}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3 self-start sm:self-auto w-full sm:w-auto justify-between sm:justify-end">
+                                                    <div className="flex gap-2">
+                                                        {viewMode === 'active' && (
+                                                            <>
+                                                                <button onClick={() => {setEditTransItem(trans); setShowTransModal(true);}} className="w-8 h-8 rounded-lg bg-blue-50 text-blue-500 hover:bg-blue-500 hover:text-white transition-all flex items-center justify-center border border-blue-100">
+                                                                    <i className="fas fa-pen text-xs"></i>
+                                                                </button>
+                                                                <button onClick={() => {if(confirm('حذف العملية؟')) setTransactions(transactions.filter(t=>t.id!==trans.id))}} className="w-8 h-8 rounded-lg bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all flex items-center justify-center border border-red-100">
+                                                                    <i className="fas fa-trash text-xs"></i>
+                                                                </button>
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                    <div className={`font-black px-4 py-1.5 rounded-xl border shadow-sm ${isPos ? 'text-blue-600 bg-blue-50 border-blue-100' : 'text-rose-600 bg-rose-50 border-rose-100'}`}>
+                                                        {isPos ? '+' : '-'} {formatMoney(trans.amount)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })
+                            }
+                        </div>
+                    </div>
+
+                    {/* Floating Add Transaction Button */}
+                    {viewMode === 'active' && (
+                        <button onClick={() => {setEditTransItem(null); setShowTransModal(true);}} className="fixed bottom-24 md:bottom-10 left-6 w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center text-2xl fab z-20 hover:scale-110 hover:-translate-y-1 transition duration-300">
+                            <i className="fas fa-plus"></i>
+                        </button>
+                    )}
+
+                    {/* Modals for Employee View */}
+                    {showTransModal && <TransactionModal 
+                        employee={employee} 
+                        hourlyRate={hourlyRate} 
+                        editItem={editTransItem}
+                        onClose={() => {setShowTransModal(false); setEditTransItem(null);}} 
+                        onSave={(transData) => {
+                            if (editTransItem) {
+                                setTransactions(transactions.map(t => t.id === editTransItem.id ? { ...transData, id: t.id, employeeId: employee.id, archiveId: t.archiveId } : t));
+                            } else {
+                                setTransactions([...transactions, { ...transData, id: generateId(), employeeId: employee.id, archiveId: null }]);
+                            }
+                            setShowTransModal(false); 
+                            setEditTransItem(null);
+                        }} 
+                    />}
+                    
+                    {showEditModal && <EmployeeFormModal editItem={employee} onClose={() => setShowEditModal(false)} onSave={(updatedData) => { updateEmployee({...employee, ...updatedData}); setShowEditModal(false); }} />}
+                </div>
+            );
+        }
+
+        // --- View: Expenses List ---
+        function ExpensesView({ expenses, onDeleteExpense, onEditExpense, settings, archives }) {
+            const [viewMode, setViewMode] = useState('active');
+            const [filterCat, setFilterCat] = useState('الكل');
+
+            let displayedExpenses = viewMode === 'active' ? expenses.filter(e => !e.archiveId) : expenses.filter(e => e.archiveId === viewMode);
+            
+            if (filterCat !== 'الكل') displayedExpenses = displayedExpenses.filter(e => e.category === filterCat);
+            
+            displayedExpenses.sort((a, b) => new Date(b.date) - new Date(a.date));
+            const total = displayedExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+            
+            const categories = ['الكل', ...new Set(expenses.map(e => e.category))];
+
+            return (
+                <div className="space-y-6 pb-24 animate-fade-in">
+                    {/* Header Card */}
+                    <div className="bg-white rounded-3xl p-6 text-slate-800 shadow-sm border border-slate-100 flex flex-col md:flex-row justify-between items-center relative overflow-hidden">
+                        <div className="absolute -left-10 -bottom-10 w-32 h-32 bg-rose-50 rounded-full opacity-50"></div>
+                        <div className="relative z-10 w-full md:w-auto text-center md:text-right mb-4 md:mb-0">
+                            <p className="text-slate-500 text-sm font-bold mb-1">إجمالي المصروفات ({viewMode === 'active' ? 'الحالية' : 'المؤرشفة'})</p>
+                            <h2 className="text-4xl font-black text-rose-600">{formatMoney(total)} <span className="text-lg font-normal text-slate-500">{settings.currency}</span></h2>
+                        </div>
+                        
+                        <div className="relative z-10 flex flex-col gap-3 w-full md:w-auto">
+                            <select className="bg-slate-50 border border-slate-200 text-sm rounded-xl px-4 py-2.5 focus:outline-none focus:border-primary font-bold w-full md:w-64" value={viewMode} onChange={e=>setViewMode(e.target.value)}>
+                                <option value="active">الفترة الحالية (نشط)</option>
+                                {archives.map(a => <option key={a.id} value={a.id}>أرشيف: {a.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Category Filter Pills */}
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+                        {categories.map(c => (
+                            <button key={c} onClick={() => setFilterCat(c)} className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-colors ${filterCat === c ? 'bg-dark text-white' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>
+                                {c}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Expenses List */}
+                    <div className="space-y-3">
+                        {displayedExpenses.length === 0 ? <div className="text-center py-16 text-slate-400 bg-white rounded-3xl border border-slate-100 font-medium">لا توجد مصروفات تطابق البحث.</div> : 
+                            displayedExpenses.map(exp => (
+                            <div key={exp.id} className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 group hover:border-rose-200 transition">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-500 border border-rose-100 shrink-0">
+                                        <i className="fas fa-file-invoice-dollar text-xl"></i>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <h4 className="font-bold text-slate-800 text-lg mb-0.5 truncate">{exp.name}</h4>
+                                        <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                                            <span className="bg-slate-100 px-2 py-0.5 rounded-md">{exp.category}</span>
+                                            <span>•</span>
+                                            <span>{formatDate(exp.date)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-0 border-slate-100 pt-3 sm:pt-0 mt-1 sm:mt-0">
+                                    <span className="font-black text-xl text-slate-800">{formatMoney(exp.amount)} <span className="text-xs text-slate-400 font-normal">{settings.currency}</span></span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => onEditExpense(exp)} className="w-10 h-10 rounded-xl bg-slate-50 text-slate-500 hover:bg-primary hover:text-white transition flex items-center justify-center border border-slate-100">
+                                            <i className="fas fa-pen"></i>
+                                        </button>
+                                        <button onClick={() => onDeleteExpense(exp.id)} className="w-10 h-10 rounded-xl bg-slate-50 text-slate-500 hover:bg-rose-500 hover:text-white transition flex items-center justify-center border border-slate-100">
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // --- View: Reports Generator ---
+        function ReportsView({ employees, transactions, expenses, settings, setReportHtml, archives }) {
+            const [reportType, setReportType] = useState('all_employees');
+            const [period, setPeriod] = useState('active');
+            const [template, setTemplate] = useState('modern'); // modern, corporate, classic
+
+            const generateReport = () => {
+                const currentDate = new Date().toLocaleString('ar-LY');
+                let periodName = period === 'active' ? 'الفترة الحالية' : archives.find(a => a.id === period)?.name || '';
+                let title = reportType === 'all_employees' ? `كشف حساب الرواتب الشامل` : `كشف المصروفات والتشغيل`;
+                let contentHtml = '';
+
+                // Highly customized CSS for Print/PDF
+                const cssModern = `
+                    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;900&display=swap');
+                    body { font-family: 'Tajawal', sans-serif; direction: rtl; color: #1e293b; background: #fff; }
+                    .report-wrapper { max-width: 100%; margin: 0 auto; padding: 20px; }
+                    .header { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 30px; border-radius: 20px; margin-bottom: 40px; border: 1px solid #e2e8f0; }
+                    .logo-area h1 { font-size: 28px; font-weight: 900; color: #0f172a; margin:0; }
+                    .logo-area p { color: #64748b; margin: 5px 0 0 0; font-size: 14px; }
+                    .title-area { text-align: left; }
+                    .title-area h2 { font-size: 24px; font-weight: bold; color: #2563eb; margin:0; }
+                    .title-area p { color: #94a3b8; font-size: 12px; margin-top:5px; }
+                    table { width: 100%; border-collapse: separate; border-spacing: 0; margin-bottom: 40px; font-size: 14px; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
+                    th, td { padding: 16px; text-align: right; border-bottom: 1px solid #f1f5f9; }
+                    th { background-color: #f8fafc; color: #475569; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+                    tr:last-child td { border-bottom: none; }
+                    tbody tr:nth-child(even) { background-color: #fafbfc; }
+                    .totals { display: flex; justify-content: flex-end; gap: 20px; }
+                    .total-box { background: #f8fafc; padding: 20px 30px; border-radius: 16px; border: 1px solid #e2e8f0; min-width: 200px; text-align: center; }
+                    .total-box.primary { background: #2563eb; color: white; border: none; }
+                    .total-box.primary .t-label { color: #bfdbfe; }
+                    .t-label { font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: bold;}
+                    .t-val { font-size: 24px; font-weight: 900; }
+                `;
+
+                const cssCorporate = `
+                    body { font-family: 'Arial', sans-serif; direction: rtl; color: #000; background: #fff; }
+                    .report-wrapper { max-width: 100%; margin: 0 auto; padding: 0; }
+                    .header { text-align: center; border-bottom: 4px solid #1e3a8a; padding-bottom: 20px; margin-bottom: 30px; }
+                    .logo-area h1 { font-size: 32px; font-weight: bold; color: #1e3a8a; margin:0; text-transform: uppercase; }
+                    .title-area h2 { font-size: 20px; font-weight: bold; margin: 15px 0 5px 0; color: #333; }
+                    .title-area p { color: #666; font-size: 12px; margin:0; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; font-size: 13px; border: 1px solid #000; }
+                    th, td { padding: 10px; text-align: right; border: 1px solid #000; }
+                    th { background-color: #1e3a8a; color: #fff; font-weight: bold; -webkit-print-color-adjust: exact; }
+                    .totals { display: flex; justify-content: flex-end; border-top: 2px solid #000; padding-top: 20px; }
+                    .total-box { padding: 10px 30px; text-align: left; }
+                    .t-label { font-size: 14px; font-weight: bold; display: inline-block; width: 150px;}
+                    .t-val { font-size: 18px; font-weight: bold; display: inline-block;}
+                `;
+
+                const cssClassic = `
+                    body { font-family: 'Courier New', Courier, monospace; direction: rtl; color: #000; background: #fff; }
+                    .report-wrapper { padding: 20px; }
+                    .header { text-align: center; border-bottom: 2px dashed #000; padding-bottom: 15px; margin-bottom: 20px; }
+                    .logo-area h1 { font-size: 24px; margin:0; }
+                    .title-area h2 { font-size: 18px; margin: 10px 0; }
+                    .title-area p { margin:0; font-size: 12px; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12px; }
+                    th, td { padding: 8px; text-align: right; border-bottom: 1px dashed #ccc; }
+                    th { border-top: 1px dashed #000; border-bottom: 1px dashed #000; font-weight: bold; }
+                    .totals { width: 100%; border-top: 2px dashed #000; padding-top: 10px; margin-top: 20px;}
+                    .total-box { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+                `;
+
+                let selectedCss = template === 'modern' ? cssModern : template === 'corporate' ? cssCorporate : cssClassic;
+
+                const tData = period === 'active' ? transactions.filter(t => !t.archiveId) : transactions.filter(t => t.archiveId === period);
+                const eData = period === 'active' ? expenses.filter(e => !e.archiveId) : expenses.filter(e => e.archiveId === period);
+
+                if (reportType === 'all_employees') {
+                    let totalBasic = 0, totalNet = 0;
+                    let rows = employees.map(emp => {
+                        const empT = tData.filter(t => t.employeeId === emp.id);
+                        let add = 0, sub = 0;
+                        empT.forEach(t => {
+                            if(['bonus','salary'].includes(t.type)) add += Number(t.amount);
+                            if(['deduction','advance'].includes(t.type)) sub += Number(t.amount);
+                        });
+                        const net = Number(emp.basicSalary) + add - sub;
+                        totalBasic += Number(emp.basicSalary); totalNet += net;
+                        return `<tr>
+                            <td><strong>${emp.name}</strong></td>
+                            <td>${emp.job || '-'}</td>
+                            <td>${formatMoney(emp.basicSalary)}</td>
+                            <td style="color: #16a34a;">+${formatMoney(add)}</td>
+                            <td style="color: #dc2626;">-${formatMoney(sub)}</td>
+                            <td><strong>${formatMoney(net)}</strong></td>
+                        </tr>`;
+                    }).join('');
+
+                    if(template === 'classic') {
+                        contentHtml = `
+                            <table>
+                                <thead><tr><th>الاسم</th><th>الأساسي</th><th>إضافات</th><th>خصومات</th><th>الصافي</th></tr></thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                            <div class="totals">
+                                <div class="total-box"><span>إجمالي الأساسي:</span><span>${formatMoney(totalBasic)} ${settings.currency}</span></div>
+                                <div class="total-box"><span>إجمالي المستحق الدفع:</span><span>${formatMoney(totalNet)} ${settings.currency}</span></div>
+                            </div>
+                        `;
+                    } else {
+                        contentHtml = `
+                            <table>
+                                <thead><tr><th>الاسم</th><th>الوظيفة</th><th>الأساسي</th><th>إضافات</th><th>خصومات</th><th>الصافي المستحق</th></tr></thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                            <div class="totals">
+                                <div class="total-box"><div class="t-label">إجمالي الأساسي</div><div class="t-val">${formatMoney(totalBasic)}</div></div>
+                                <div class="total-box ${template==='modern'?'primary':''}"><div class="t-label">إجمالي المطلوب دفعه</div><div class="t-val">${formatMoney(totalNet)} <span style="font-size:14px; font-weight:normal">${settings.currency}</span></div></div>
+                            </div>
+                        `;
+                    }
+
+                } else {
+                    let totalExp = 0;
+                    let rows = eData.map(e => {
+                        totalExp += Number(e.amount);
+                        return `<tr><td>${formatDate(e.date)}</td><td><strong>${e.name}</strong></td><td>${e.category}</td><td><strong>${formatMoney(e.amount)}</strong></td></tr>`;
+                    }).join('');
+
+                    if(template === 'classic') {
+                         contentHtml = `
+                            <table>
+                                <thead><tr><th>التاريخ</th><th>البيان</th><th>التصنيف</th><th>القيمة</th></tr></thead>
+                                <tbody>${rows || '<tr><td colspan="4" style="text-align:center">لا توجد بيانات</td></tr>'}</tbody>
+                            </table>
+                            <div class="totals"><div class="total-box"><span>إجمالي المصروفات:</span><span>${formatMoney(totalExp)} ${settings.currency}</span></div></div>
+                        `;
+                    } else {
+                        contentHtml = `
+                            <table>
+                                <thead><tr><th>التاريخ</th><th>البيان</th><th>التصنيف</th><th>القيمة</th></tr></thead>
+                                <tbody>${rows || '<tr><td colspan="4" style="text-align:center">لا توجد بيانات</td></tr>'}</tbody>
+                            </table>
+                            <div class="totals">
+                                <div class="total-box ${template==='modern'?'primary':''}"><div class="t-label">إجمالي المصروفات</div><div class="t-val">${formatMoney(totalExp)} <span style="font-size:14px; font-weight:normal">${settings.currency}</span></div></div>
+                            </div>
+                        `;
+                    }
+                }
+
+                setReportHtml(`
+                    <style>${selectedCss}</style>
+                    <div class="report-wrapper">
+                        <div class="header">
+                            <div class="logo-area">
+                                <h1>${settings.companyName}</h1>
+                                <p>التقرير المالي الدوري</p>
+                            </div>
+                            <div class="title-area">
+                                <h2>${title}</h2>
+                                <p>عن الفترة: ${periodName} | تاريخ الإصدار: ${currentDate}</p>
+                            </div>
+                        </div>
+                        ${contentHtml}
+                        <div style="margin-top: 50px; border-top: 1px solid #ccc; padding-top: 20px; text-align: center; font-size: 11px; color: #666; ${template==='classic'? 'border-top: 1px dashed #000;':''}">
+                            تم إنشاء هذا التقرير آلياً بواسطة نظام BØFA Manager Pro. توقيع المحاسب / المدير: ..........................
+                        </div>
+                    </div>
+                `);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto space-y-6 animate-fade-in pb-24">
+                    <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <h2 className="text-2xl font-black mb-2 text-slate-800">مولد التقارير الذكي</h2>
+                        <p className="text-slate-500 mb-8 font-medium">قم بتخصيص التقرير، اختر القالب المناسب، واطبعه أو احفظه كـ PDF.</p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">نوع التقرير البيانات</label>
+                                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-primary/20 outline-none font-bold" value={reportType} onChange={e => setReportType(e.target.value)}>
+                                    <option value="all_employees">تقرير رواتب الموظفين الشامل</option>
+                                    <option value="expenses">تقرير المصروفات والتشغيل</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">الفترة الزمنية</label>
+                                <select className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 focus:ring-2 focus:ring-primary/20 outline-none font-bold" value={period} onChange={e => setPeriod(e.target.value)}>
+                                    <option value="active">الفترة الحالية (النشطة)</option>
+                                    {archives.map(a => <option key={a.id} value={a.id}>أرشيف: {a.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="mb-10">
+                            <label className="block text-sm font-bold text-slate-700 mb-3">قالب الطباعة (Template)</label>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {[{id:'modern', name:'قالب حديث', desc:'تصميم عصري وملون', icon:'fa-wand-magic-sparkles'}, 
+                                  {id:'corporate', name:'قالب رسمي', desc:'تصميم هندسي للشركات', icon:'fa-building'}, 
+                                  {id:'classic', name:'قالب كلاسيكي', desc:'أبيض وأسود مبسط', icon:'fa-receipt'}].map(t => (
+                                    <div key={t.id} onClick={() => setTemplate(t.id)} className={`cursor-pointer border-2 rounded-2xl p-4 text-center transition-all ${template === t.id ? 'border-primary bg-blue-50 ring-4 ring-primary/10' : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'}`}>
+                                        <div className={`w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 ${template === t.id ? 'bg-primary text-white' : 'bg-slate-200 text-slate-500'}`}>
+                                            <i className={`fas ${t.icon} text-lg`}></i>
+                                        </div>
+                                        <div className={`font-bold text-lg mb-1 ${template === t.id ? 'text-primary' : 'text-slate-700'}`}>{t.name}</div>
+                                        <div className="text-xs text-slate-500">{t.desc}</div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <button onClick={generateReport} className="w-full bg-dark hover:bg-slate-800 text-white font-bold py-4 rounded-xl transition shadow-xl shadow-slate-900/20 flex justify-center items-center gap-3 text-lg">
+                            <i className="fas fa-file-pdf"></i> إنشاء وعرض التقرير
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- View: Settings ---
+        function SettingsView({ settings, setSettings, setPin, employees, transactions, expenses, archives }) {
+            const handleBackup = () => {
+                const data = { employees, transactions, expenses, archives, settings };
+                const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `BOFA_Backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+            };
+
+            const handleRestore = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if(data.employees && data.settings) {
+                            window.localStorage.setItem('bofa_employees_v2', JSON.stringify(data.employees));
+                            window.localStorage.setItem('bofa_transactions_v2', JSON.stringify(data.transactions));
+                            window.localStorage.setItem('bofa_expenses_v2', JSON.stringify(data.expenses));
+                            window.localStorage.setItem('bofa_archives_v2', JSON.stringify(data.archives || []));
+                            window.localStorage.setItem('bofa_settings_v2', JSON.stringify(data.settings));
+                            alert('تم استعادة النسخة الاحتياطية بنجاح! سيتم إعادة تحميل المنظومة.');
+                            window.location.reload();
+                        } else alert('ملف النسخة الاحتياطية غير صالح.');
+                    } catch(err) { alert('حدث خطأ أثناء قراءة الملف.'); }
+                };
+                reader.readAsText(file);
+            };
+
+            return (
+                <div className="max-w-3xl mx-auto space-y-6 pb-24 animate-fade-in">
+                    <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3"><i className="fas fa-building text-primary"></i> إعدادات المؤسسة</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">اسم المنشأة / المنظومة</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-800" value={settings.companyName} onChange={e => setSettings({...settings, companyName: e.target.value})} placeholder="أدخل اسم شركتك" />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-slate-700 mb-2">العملة المحلية</label>
+                                <input type="text" className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary/20 outline-none font-bold text-slate-800" value={settings.currency} onChange={e => setSettings({...settings, currency: e.target.value})} placeholder="مثال: د.ل، ريال، $" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white p-6 md:p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                        <h3 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3"><i className="fas fa-shield-halved text-emerald-500"></i> الأمان وحفظ البيانات</h3>
+                        <div className="space-y-6">
+                            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                <label className="block text-sm font-bold text-slate-700 mb-3">تغيير رمز الدخول (PIN)</label>
+                                <input type="password" maxLength="4" placeholder="••••" className="w-full md:w-1/2 bg-white border border-slate-200 rounded-xl px-4 py-3 text-center tracking-[1em] text-2xl font-black outline-none focus:border-primary" onChange={e => { if(e.target.value.length === 4) {setPin(e.target.value); alert('تم تحديث الرمز السري بنجاح'); e.target.value='';} }} />
+                                <p className="text-xs text-slate-500 mt-2">أدخل 4 أرقام لتغيير الرمز الحالي فوراً.</p>
+                            </div>
+                            
+                            <div className="pt-2">
+                                <h4 className="font-bold text-slate-800 mb-2">النسخ الاحتياطي</h4>
+                                <p className="text-sm text-slate-500 mb-4 leading-relaxed">بما أن المنظومة تعمل محلياً على متصفحك، ننصحك بحفظ نسخة احتياطية من بياناتك بشكل دوري تحسباً لأي طارئ.</p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button onClick={handleBackup} className="flex-1 bg-dark text-white py-3.5 rounded-xl font-bold shadow-md hover:bg-slate-800 transition flex items-center justify-center gap-2">
+                                        <i className="fas fa-download text-emerald-400"></i> تنزيل نسخة احتياطية
+                                    </button>
+                                    <label className="flex-1 bg-white text-slate-700 py-3.5 rounded-xl font-bold text-center cursor-pointer hover:bg-slate-50 transition border border-slate-200 shadow-sm flex items-center justify-center gap-2">
+                                        <i className="fas fa-upload text-primary"></i> استعادة البيانات
+                                        <input type="file" accept=".json" className="hidden" onChange={handleRestore} />
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // --- View: Archive ---
+        function ArchiveView({ archives }) {
+            return (
+                <div className="max-w-3xl mx-auto animate-fade-in pb-24">
+                    <div className="bg-slate-900 text-white p-8 rounded-[2rem] shadow-xl mb-8 flex flex-col md:flex-row items-center md:items-start gap-6 relative overflow-hidden">
+                        <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+                        <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center text-4xl shadow-inner shrink-0"><i className="fas fa-box-archive text-blue-300"></i></div>
+                        <div className="text-center md:text-right z-10">
+                            <h2 className="text-3xl font-black mb-2">مستودع الأرشيف</h2>
+                            <p className="text-slate-400 text-sm leading-relaxed">يحتوي على كافة الفترات المالية والشهور التي تم إقفالها وتصفيرها مسبقاً. البيانات هنا هي للقراءة واستخراج التقارير فقط.</p>
+                        </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                        {archives.length === 0 ? <div className="text-center text-slate-500 py-16 bg-white rounded-[2rem] border border-slate-100 font-medium">الأرشيف فارغ حالياً.</div> : 
+                            archives.map(a => (
+                                <div key={a.id} className="bg-white p-5 rounded-2xl border border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-sm hover:shadow-md transition">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100 text-slate-400"><i className="fas fa-folder-closed"></i></div>
+                                        <div>
+                                            <p className="font-bold text-slate-800 text-lg">{a.name}</p>
+                                            <p className="text-xs text-slate-400 font-medium mt-0.5">تاريخ الإقفال: {formatDate(a.date)}</p>
+                                        </div>
+                                    </div>
+                                    <div className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-xs px-3 py-1.5 rounded-lg font-bold self-start sm:self-auto flex items-center gap-1">
+                                        <i className="fas fa-lock text-[10px]"></i> فترة مغلقة
+                                    </div>
+                                </div>
+                            ))
+                        }
+                    </div>
+                </div>
+            );
+        }
+
+        // --- Shared UI Components ---
+        function BottomSheet({ title, onClose, children }) {
+            return (
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity">
+                    <div className="absolute inset-0" onClick={onClose}></div>
+                    <div className="bg-white w-full sm:max-w-md sm:rounded-3xl rounded-t-3xl p-6 relative z-10 bottom-sheet-enter-active max-h-[90vh] flex flex-col shadow-2xl">
+                        <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-5 sm:hidden"></div>
+                        <div className="flex justify-between items-center mb-5 pb-3 border-b border-slate-100">
+                            <h3 className="font-black text-xl text-slate-800">{title}</h3>
+                            <button onClick={onClose} className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition"><i className="fas fa-times"></i></button>
+                        </div>
+                        <div className="overflow-y-auto no-scrollbar flex-1 pb-4">{children}</div>
+                    </div>
+                </div>
+            );
+        }
+
+        function NavItem({ icon, label, active, onClick }) {
+            return (
+                <button onClick={onClick} className={`flex items-center w-full px-4 py-3.5 rounded-xl transition-all duration-200 text-right font-bold ${active ? 'bg-primary text-white shadow-md shadow-blue-500/20 translate-x-1' : 'text-slate-400 hover:bg-white/5 hover:text-white'}`}>
+                    <i className={`fas ${icon} w-6 text-center ml-3 text-lg`}></i> {label}
+                </button>
+            );
+        }
+
+        function MobileNavItem({ icon, label, active, main, onClick }) {
+            if (main) return (
+                <button onClick={onClick} className="relative -top-5 w-14 h-14 bg-gradient-to-tr from-primary to-blue-400 text-white rounded-full flex items-center justify-center text-2xl shadow-lg shadow-blue-500/40 border-4 border-white transform active:scale-95 transition">
+                    <i className={`fas ${icon}`}></i>
+                </button>
+            );
+            return (
+                <button onClick={onClick} className={`flex flex-col items-center justify-center w-16 h-full transition-colors ${active ? 'text-primary' : 'text-slate-400'}`}>
+                    <i className={`fas ${icon} text-xl mb-1 ${active ? 'transform scale-110 mb-1.5' : ''} transition-all`}></i>
+                    <span className={`text-[10px] ${active ? 'font-black' : 'font-medium'}`}>{label}</span>
+                </button>
+            );
+        }
+
+        function StatCard({ title, value, sub, icon, color }) {
+            return (
+                <div className="bg-white p-5 rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${color}`}>
+                        <i className={`fas ${icon} text-xl`}></i>
+                    </div>
+                    <p className="text-slate-500 text-sm font-bold mb-1">{title}</p>
+                    <h3 className="text-2xl font-black text-slate-800 truncate">{value} <span className="text-[11px] font-medium text-slate-400">{sub}</span></h3>
+                </div>
+            );
+        }
+
+        // --- Modals ---
+        function EmployeeFormModal({ editItem, onClose, onSave }) {
+            // Added workingHours field
+            const [formData, setFormData] = useState(editItem || { name: '', job: '', basicSalary: '', workingHours: 240 });
+            return (
+                <BottomSheet title={editItem ? "تعديل بيانات الموظف" : "إضافة موظف جديد"} onClose={onClose}>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">الاسم الكامل</label>
+                            <input type="text" className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-primary outline-none font-bold" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">المسمى الوظيفي</label>
+                            <input type="text" className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-primary outline-none font-bold" value={formData.job} onChange={e => setFormData({...formData, job: e.target.value})} />
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <label className="block text-xs font-bold text-slate-500 mb-1">الراتب الأساسي</label>
+                                <input type="number" className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-primary outline-none font-black text-primary text-left" dir="ltr" value={formData.basicSalary} onChange={e => setFormData({...formData, basicSalary: e.target.value})} />
+                            </div>
+                            <div className="flex-1">
+                                <label className="block text-xs font-bold text-slate-500 mb-1">ساعات العمل شهرياً</label>
+                                <input type="number" className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-primary outline-none font-bold text-left text-slate-700" dir="ltr" value={formData.workingHours} onChange={e => setFormData({...formData, workingHours: e.target.value})} placeholder="الافتراضي: 240" />
+                            </div>
+                        </div>
+                        <button onClick={() => { if(formData.name && formData.basicSalary) onSave(formData); else alert('يرجى تعبئة الاسم والراتب الأساسي.'); }} className="w-full bg-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition mt-6 text-lg">
+                            {editItem ? 'حفظ التعديلات' : 'تسجيل الموظف'}
+                        </button>
+                    </div>
+                </BottomSheet>
+            );
+        }
+
+        function TransactionModal({ employee, hourlyRate, onClose, onSave, editItem }) {
+            const [type, setType] = useState(editItem ? editItem.type : 'advance');
+            const [calcMode, setCalcMode] = useState('money');
+            const [inputValue, setInputValue] = useState(editItem ? editItem.amount : '');
+            const [reason, setReason] = useState(editItem ? editItem.reason : '');
+            
+            const types = [{ id:'advance', name:'سلفة مالية', color:'rose' }, { id:'deduction', name:'خصم', color:'rose' }, { id:'bonus', name:'إضافي', color:'primary' }];
+
+            return (
+                <BottomSheet title={editItem ? `تعديل عملية لـ: ${employee.name}` : `إجراء على: ${employee.name}`} onClose={onClose}>
+                    <div className="space-y-6">
+                        <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
+                            {types.map(t => <button key={t.id} onClick={() => setType(t.id)} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition ${type === t.id ? `bg-white shadow-sm text-${t.color === 'primary' ? 'primary' : 'rose-500'}` : 'text-slate-500'}`}>{t.name}</button>)}
+                        </div>
+                        {type !== 'advance' && !editItem && (
+                            <div className="flex justify-center gap-6 text-sm bg-slate-50 p-2 rounded-xl border border-slate-100">
+                                <label className="flex items-center cursor-pointer gap-2 font-bold text-slate-700"><input type="radio" checked={calcMode==='money'} onChange={()=>setCalcMode('money')} className="accent-primary w-4 h-4" /> مبلغ مالي</label>
+                                <label className="flex items-center cursor-pointer gap-2 font-bold text-slate-700"><input type="radio" checked={calcMode==='hours'} onChange={()=>setCalcMode('hours')} className="accent-primary w-4 h-4" /> حساب بالساعات</label>
+                            </div>
+                        )}
+                        <div className="relative bg-slate-50 rounded-2xl p-6 border border-slate-200 focus-within:border-primary focus-within:ring-4 ring-primary/10 transition">
+                            <input type="number" className="w-full text-center text-5xl font-black text-slate-800 focus:outline-none bg-transparent" placeholder="0" value={inputValue} onChange={e=>setInputValue(e.target.value)} autoFocus dir="ltr" />
+                            <div className="text-center text-sm text-slate-400 font-bold mt-2">{calcMode === 'hours' ? 'ساعة عمل' : 'دينار'}</div>
+                        </div>
+                        {calcMode === 'hours' && inputValue && <p className="text-center text-sm text-primary font-bold bg-blue-50 py-3 rounded-xl border border-blue-100"><i className="fas fa-calculator ml-1"></i> يعادل مالياً: {formatMoney(Number(inputValue) * Number(hourlyRate))} دينار</p>}
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">السبب أو البيان</label>
+                            <input type="text" placeholder="مثال: تأخير، مكافأة أداء..." className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-primary outline-none font-bold" value={reason} onChange={e=>setReason(e.target.value)} />
+                        </div>
+                        <button onClick={() => {
+                            if(!inputValue || !reason) { alert('الرجاء إدخال القيمة والبيان'); return; }
+                            let amt = calcMode === 'hours' ? (Number(inputValue)*Number(hourlyRate)).toFixed(2) : inputValue;
+                            let rsn = calcMode === 'hours' ? `${reason} (${inputValue} ساعة)` : reason;
+                            
+                            onSave({ 
+                                type, 
+                                amount: amt, 
+                                reason: rsn, 
+                                date: editItem ? editItem.date : new Date().toISOString() 
+                            });
+                        }} className="w-full bg-dark text-white font-bold py-4 rounded-xl shadow-lg hover:bg-slate-800 transition text-lg">
+                            {editItem ? 'حفظ التعديلات' : 'تأكيد وتنفيذ العملية'}
+                        </button>
+                    </div>
+                </BottomSheet>
+            );
+        }
+
+        function ExpenseModal({ editItem, onClose, onSave }) {
+            const [formData, setFormData] = useState(editItem || { name: '', amount: '', category: 'عام', date: new Date().toISOString().slice(0, 10) });
+            return (
+                <BottomSheet title={editItem ? "تعديل المصروف" : "تسجيل مصروف جديد"} onClose={onClose}>
+                    <div className="space-y-5">
+                        <div className="relative bg-rose-50 rounded-2xl p-6 border border-rose-100 focus-within:border-rose-300 focus-within:ring-4 ring-rose-500/10 transition">
+                            <input type="number" placeholder="0" className="w-full bg-transparent text-center text-5xl font-black text-rose-600 focus:outline-none" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} dir="ltr" autoFocus />
+                            <div className="text-center text-sm text-rose-400 font-bold mt-2">القيمة الإجمالية</div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">بيان المصروف</label>
+                            <input type="text" placeholder="مثال: فاتورة كهرباء، صيانة أجهزة..." className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-rose-400 outline-none font-bold" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-500 mb-1">تصنيف المصروف</label>
+                            <select className="w-full border border-slate-200 rounded-xl px-4 py-3 bg-slate-50 focus:bg-white focus:border-rose-400 outline-none font-bold text-slate-700" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
+                                <option value="عام">مصروفات عامة</option>
+                                <option value="تشغيل">مصروفات تشغيلية</option>
+                                <option value="مشتريات">مشتريات</option>
+                                <option value="صيانة">صيانة</option>
+                            </select>
+                        </div>
+                        <button onClick={() => { if(formData.name && formData.amount) onSave(formData); else alert('الرجاء تعبئة القيمة والبيان'); }} className="w-full bg-rose-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-rose-500/30 hover:bg-rose-600 transition mt-2 text-lg">
+                            {editItem ? 'حفظ التعديلات' : 'اعتماد المصروف'}
+                        </button>
+                    </div>
+                </BottomSheet>
+            );
+        }
+
+        const getTransTypeName = (t) => t==='advance'?'سلفة مالية':t==='deduction'?'خصم':t==='bonus'?'مكافأة/إضافي':'راتب';
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
