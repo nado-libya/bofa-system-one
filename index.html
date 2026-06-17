@@ -60,10 +60,12 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- React & ReactDOM (Stable Libraries - Removed crossorigin to prevent strict MIME local protocol errors) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel Standalone (Pinned to stable 7.21.0 to prevent dynamic import syntax errors on file:/// protocol) -->
+    <script src="https://unpkg.com/@babel/standalone@7.21.0/babel.min.js"></script>
 
     <style>
         body { 
@@ -127,7 +129,8 @@
 <body class="text-slate-800 pb-20 md:pb-0 selection:bg-primary selection:text-white">
     <div id="root"></div>
 
-    <script type="text/babel">
+    <!-- Added data-presets to guide babel directly -->
+    <script type="text/babel" data-presets="react">
         const { useState, useEffect, useMemo, useRef } = React;
 
         // --- Utility Functions ---
@@ -404,7 +407,7 @@
             );
         }
 
-        // --- Splash & Login Screen (Enhanced) ---
+        // --- Splash & Login Screen ---
         function LoginScreen({ correctPin, companyName, onLogin }) {
             const [input, setInput] = useState('');
             const [isSplash, setIsSplash] = useState(true);
@@ -719,6 +722,7 @@
                         .logo-area h1 { font-size: 28px; font-weight: 900; color: #0f172a; margin:0; }
                         .title-area { text-align: left; }
                         .title-area h2 { font-size: 24px; font-weight: bold; color: #2563eb; margin:0; }
+                        .title-area p { color: #94a3b8; font-size: 12px; margin-top:5px; }
                         .emp-card { background: #fff; border: 1px solid #e2e8f0; padding: 20px; border-radius: 16px; margin-bottom: 30px; display: flex; justify-content: space-between;}
                         .emp-info h3 { margin: 0 0 10px 0; font-size: 22px; color: #0f172a;}
                         .emp-info p { margin: 5px 0; color: #475569; font-size: 14px;}
@@ -1379,7 +1383,6 @@
 
         // --- Modals ---
         function EmployeeFormModal({ editItem, onClose, onSave }) {
-            // Added workingHours field
             const [formData, setFormData] = useState(editItem || { name: '', job: '', basicSalary: '', workingHours: 240 });
             return (
                 <BottomSheet title={editItem ? "تعديل بيانات الموظف" : "إضافة موظف جديد"} onClose={onClose}>
@@ -1422,7 +1425,15 @@
                 <BottomSheet title={editItem ? `تعديل عملية لـ: ${employee.name}` : `إجراء على: ${employee.name}`} onClose={onClose}>
                     <div className="space-y-6">
                         <div className="flex bg-slate-100 rounded-xl p-1 gap-1">
-                            {types.map(t => <button key={t.id} onClick={() => setType(t.id)} className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition ${type === t.id ? `bg-white shadow-sm text-${t.color === 'primary' ? 'primary' : 'rose-500'}` : 'text-slate-500'}`}>{t.name}</button>)}
+                            {types.map(t => (
+                                <button 
+                                    key={t.id} 
+                                    onClick={() => setType(t.id)} 
+                                    className={`flex-1 py-2.5 rounded-lg text-sm font-bold transition ${type === t.id ? (t.color === 'primary' ? 'bg-white shadow-sm text-primary' : 'bg-white shadow-sm text-rose-500') : 'text-slate-500'}`}
+                                >
+                                    {t.name}
+                                </button>
+                            ))}
                         </div>
                         {type !== 'advance' && !editItem && (
                             <div className="flex justify-center gap-6 text-sm bg-slate-50 p-2 rounded-xl border border-slate-100">
